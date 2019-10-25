@@ -3,7 +3,7 @@ defmodule CfBfx.API do
   require Logger
 
   @max_req_per_minute 10
-  @retry_count 1 + (60 / @max_req_per_minute)
+  @retry_count (60 / @max_req_per_minute)
 
   #---------------------------------------------------------------------------------------------------------------------
   # public functions
@@ -181,7 +181,7 @@ defmodule CfBfx.API do
     http_resp = req_fun.(params)
     case check_http_response(http_resp) do
       {:error, {429, _body}} ->
-        Process.sleep(round(60000 / @retry_count))
+        Process.sleep(round(60000 / @max_req_per_minute))
         retry_req(req_fun, params, retry_count - 1)
       response -> response
     end
