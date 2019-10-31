@@ -26,7 +26,6 @@ defmodule CfBfx.Websocket do
 
 
   def handle_cast({:send, {type, msg} = frame}, state) do
-    Logger.debug "Sending #{type} frame with payload: #{msg}"
     {:reply, frame, state}
   end
 
