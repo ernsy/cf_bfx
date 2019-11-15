@@ -56,7 +56,7 @@ defmodule CfBfx.Server do
   end
 
   def handle_cast(
-        [_chan_id, frame_type, [wallet_type, currency, _balance, _unsettled_interest, _balance_available] = frame_body],
+        [_chan_id, frame_type, [wallet_type, currency, _balance, _unsettled_interest, _balance_available | _] = frame_body],
         %{wallets: wallets0} = state
       ) when frame_type == "wu" do
     Logger.info("wu frame_body: #{inspect frame_body}")
@@ -128,7 +128,7 @@ defmodule CfBfx.Server do
     {:ok, wallets}
   end
   defp update_wallets(
-         [[wallet_type, currency, balance, unsettled_interest, balance_available] | rest_wallets],
+         [[wallet_type, currency, balance, unsettled_interest, balance_available | _] | rest_wallets],
          wallets0
        ) do
     wallets1 = put_in(

@@ -24,8 +24,7 @@ defmodule CfBfx.Websocket do
     {:ok, state}
   end
 
-
-  def handle_cast({:send, {type, msg} = frame}, state) do
+  def handle_cast({:send, frame}, state) do
     {:reply, frame, state}
   end
 
