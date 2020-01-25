@@ -6,9 +6,9 @@ defmodule CfBfx.Server do
   alias CfBfx.API, as: API
 
   @minimum_fund_amount 50.01
-  @check_offer_period 60000 * 15
+  @check_offer_period 60000 * 5
   @check_ws_conn_period 60000 * 5
-  @offer_volume_threshold_percent 1 / 24 / 4
+  @offer_volume_threshold_percent 1 / 24 / 12
 
   defguardp is_fiat(currency) when currency == "USD" or currency == "GBP"
 
@@ -173,7 +173,7 @@ defmodule CfBfx.Server do
     {:ok, funding_book} = API.get_funding_book(currency, "0", "1000")
     asks = funding_book["asks"]
     {:ok, funding_offer_rate} = calc_funding_offer_rate(asks, ticker.volume, @offer_volume_threshold_percent)
-    period = 2
+    period = if rate >= 15, do: 30, else: 2
     API.create_funding_offer_v1(currency, amount, funding_offer_rate, period)
   end
   defp maybe_create_funding_offer(currency, amount, exch_rate) do
