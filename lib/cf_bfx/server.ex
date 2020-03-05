@@ -173,7 +173,7 @@ defmodule CfBfx.Server do
     {:ok, funding_book} = API.get_funding_book(currency, "0", "1000")
     asks = funding_book["asks"]
     {:ok, funding_offer_rate} = calc_funding_offer_rate(asks, ticker.volume, @offer_volume_threshold_percent)
-    period = if rate >= 15, do: 30, else: 2
+    period = if funding_offer_rate >= 15, do: 30, else: 2
     API.create_funding_offer_v1(currency, amount, funding_offer_rate, period)
   end
   defp maybe_create_funding_offer(currency, amount, exch_rate) do
