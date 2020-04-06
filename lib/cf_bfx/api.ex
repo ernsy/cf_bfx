@@ -74,7 +74,11 @@ defmodule CfBfx.API do
         high,
         low
       ]
-    } = invoke_public_api_v2("/v2/ticker/" <> "t" <> currency <> "USD")
+    } = if currency == "XAUT" do
+      invoke_public_api_v2("/v2/ticker/" <> "t" <> currency <> ":USD")
+    else
+      invoke_public_api_v2("/v2/ticker/" <> "t" <> currency <> "USD")
+    end
     {
       :ok,
       %{
