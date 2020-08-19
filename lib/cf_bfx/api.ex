@@ -197,7 +197,10 @@ defmodule CfBfx.API do
     {:ok, body}
   end
   defp check_http_response({:ok, %HTTPoison.Response{status_code: status_code, body: json_body}}) do
-    body = Jason.decode!(json_body)
+    body = case Jason.decode(json_body) do
+      {:ok, decodedBody} -> decodedBody
+      {:error, _} -> json_body
+    end
     Logger.warn("Bitfinex Response: {#{inspect status_code}, #{inspect body}}")
     {:error, {status_code, body}}
   end
