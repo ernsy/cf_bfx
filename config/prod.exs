@@ -22,11 +22,15 @@ use Mix.Config
 #
 # tell logger to load a LoggerFileBackend processes
 config :logger,
-       backends: [{LoggerFileBackend, :error_log}]
+       backends: [{LoggerFileBackend, :error_log}, :console]
 
 # configuration for the {LoggerFileBackend, :error_log} backend
 config :logger,
        :error_log,
        path: "./cf.log",
        level: :info
-       #,metadata: [:module, :line, :function]
+#,metadata: [:module, :line, :function]
+
+config :logger, :console,
+       level: :info
+#,metadata: [:module, :line, :function]
