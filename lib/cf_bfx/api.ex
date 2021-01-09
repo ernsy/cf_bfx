@@ -204,8 +204,12 @@ defmodule CfBfx.API do
     Logger.warn("Bitfinex Response: {#{inspect status_code}, #{inspect body}}")
     {:error, {status_code, body}}
   end
+  defp check_http_response({:error, %HTTPoison.Error{reason: reason}}= error) do
+    Logger.error("HTTP Poison error, reason: #{inspect reason}")
+    error
+  end
   defp check_http_response(error) do
-    Logger.error(error)
+    Logger.error("Unknown HTTP error #{inspect error}")
     error
   end
 

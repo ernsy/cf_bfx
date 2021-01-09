@@ -56,7 +56,11 @@ defmodule CfBfx.Server do
   end
 
   def handle_cast(
-        [_chan_id, frame_type, [wallet_type, currency, _balance, _unsettled_interest, _balance_available | _] = frame_body],
+        [
+          _chan_id,
+          frame_type,
+          [wallet_type, currency, _balance, _unsettled_interest, _balance_available | _] = frame_body
+        ],
         %{wallets: wallets0} = state
       ) when frame_type == "wu" do
     Logger.info("wu frame_body: #{inspect frame_body}")
@@ -120,8 +124,10 @@ defmodule CfBfx.Server do
   #---------------------------------------------------------------------------------------------------------------------
 
   defp cancel_all_active_offers() do
-    {:ok, offers} = API.get_active_offers_v1()
-    Enum.each(offers, &(API.cancel_offer_v1(&1["id"])))
+    case API.get_active_offers_v1() do
+      {:ok, offers} -> Enum.each(offers, &(API.cancel_offer_v1(&1["id"])))
+      _ -> :ok
+    end
   end
 
   defp update_wallets([], wallets) do
@@ -170,7 +176,7 @@ defmodule CfBfx.Server do
 
   defp maybe_create_funding_offer(currency, amount, exch_rate) when amount * exch_rate >= @minimum_fund_amount  do
     {:ok, ticker} = API.get_funding_ticker_v2(currency)
-    {:ok, funding_book} = API.get_funding_book(currency, "0", "1000")
+    {:ok, funding_book} = API.get_funding_book(currency, "0", "5000")
     asks = funding_book["asks"]
     {:ok, funding_offer_rate} = calc_funding_offer_rate(asks, ticker.volume, @offer_volume_threshold_percent)
     period = if funding_offer_rate >= 15, do: 30, else: 2
