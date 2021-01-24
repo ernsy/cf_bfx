@@ -6,9 +6,10 @@ defmodule CfBfx.Server do
   alias CfBfx.API, as: API
 
   @minimum_fund_amount 50.01
-  @check_offer_period 60000 * 5
+  @check_offer_period 60000 * 3
   @check_ws_conn_period 60000 * 5
-  @offer_volume_threshold_percent 1 / 24 / 12
+  @reset_period 60000 * 30
+  @offer_volume_threshold_percent 1 / 24 / 24
 
   defguardp is_fiat(currency) when currency == "USD" or currency == "GBP"
 
@@ -43,6 +44,7 @@ defmodule CfBfx.Server do
     {:ok, _table} = :dets.open_file(:disk_storage, [type: :set])
     Process.send_after(self(), :check_offers, @check_offer_period)
     keep_alive_timer = Process.send_after(self(), :reset_ws_conn, @check_ws_conn_period)
+    Process.send_after(self(), :reset_ws_conn, @reset_period)
     state = %{
       wallets: %{},
       ws_client: client,
@@ -85,9 +87,10 @@ defmodule CfBfx.Server do
     )
     {:noreply, state}
   end
-  # not sure what hb means but seems to be emitted by websocket every 15s so using as keep alive
-  def handle_cast([_chan_id_, "hb"], %{keep_alive_timer: old_timer} = state) do
+  # heartbeat
+  def handle_cast([_chan_id_, "hb"] = msg, %{keep_alive_timer: old_timer} = state) do
     Process.cancel_timer(old_timer)
+    Logger.debug("cast msg hb: #{inspect msg}")
     timer = Process.send_after(self(), :reset_ws_conn, @check_ws_conn_period)
     {:noreply, %{state | keep_alive_timer: timer}}
   end
@@ -106,9 +109,12 @@ defmodule CfBfx.Server do
     Process.send_after(self(), :check_offers, @check_offer_period)
     {:noreply, state}
   end
-  def handle_info(:reset_ws_conn, %{ws_client: ws_client}) do
-    Process.exit(ws_client, :normal)
-    exit(:normal)
+  def handle_info(:reset_ws_conn, %{ws_client: ws_client} = state) do
+    Logger.debug("reset")
+    DynamicSupervisor.terminate_child(CF.WebsocketSupervisor, ws_client)
+    {:ok, new_ws_client} = API.connect_auth_ws_v2()
+    Process.send_after(self(), :reset_ws_conn, @reset_period)
+    {:noreply, %{state | ws_client: new_ws_client}}
   end
   def handle_info(msg, state) do
     Logger.debug("info msg: #{inspect msg}")
@@ -179,7 +185,11 @@ defmodule CfBfx.Server do
     {:ok, funding_book} = API.get_funding_book(currency, "0", "5000")
     asks = funding_book["asks"]
     {:ok, funding_offer_rate} = calc_funding_offer_rate(asks, ticker.volume, @offer_volume_threshold_percent)
-    period = if funding_offer_rate >= 15, do: 30, else: 2
+    period = cond do
+      funding_offer_rate >= 20 -> 120
+      funding_offer_rate >= 15 -> 30
+      true -> 2
+    end
     API.create_funding_offer_v1(currency, amount, funding_offer_rate, period)
   end
   defp maybe_create_funding_offer(currency, amount, exch_rate) do

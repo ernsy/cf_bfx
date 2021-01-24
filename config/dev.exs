@@ -25,3 +25,4 @@ config :logger,
        backends: [:console]
 config :logger, :console,
        metadata: [:module, :line, :function]
+       level: :debug

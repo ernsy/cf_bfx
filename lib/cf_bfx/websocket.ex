@@ -8,6 +8,10 @@ defmodule CfBfx.Websocket do
     WebSockex.send_frame(client, {type, msg})
   end
 
+  def close(client) do
+    WebSockex.cast(client,:close)
+  end
+
   def start_link([url, state]) do
     WebSockex.start_link(url, __MODULE__, state)
   end
@@ -24,8 +28,21 @@ defmodule CfBfx.Websocket do
     {:ok, state}
   end
 
+  def handle_cast(:close, state) do
+    Logger.debug "closing ws"
+    WebSockex.send_close_frame({:local,:normal}, state.conn)
+    WebSockex.Conn.close_socket(state.conn)
+    {:close, state}
+  end
+
   def handle_cast({:send, frame}, state) do
     {:reply, frame, state}
+  end
+
+  def terminate(reason, state) do
+    WebSockex.send_close_frame({:local,:normal}, state.conn)
+    WebSockex.Conn.close_socket(state.conn)
+    exit(:normal)
   end
 
 end
