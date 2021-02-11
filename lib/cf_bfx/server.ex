@@ -6,10 +6,10 @@ defmodule CfBfx.Server do
   alias CfBfx.API, as: API
 
   @minimum_fund_amount 50.01
-  @check_offer_period 60000 * 3
+  @check_offer_period 60000 * 10
   @check_ws_conn_period 60000 * 5
   @reset_period 60000 * 30
-  @offer_volume_threshold_percent 1 / 24 / 24
+  @offer_volume_threshold_percent 1 / 24 / 6
 
   defguardp is_fiat(currency) when currency == "USD" or currency == "GBP"
 
@@ -55,6 +55,10 @@ defmodule CfBfx.Server do
 
   def handle_call(_msg, _from, state) do
     {:reply, :ok, state}
+  end
+
+  def handle_cast([_, "wu", [_, "GBP", _, _, _ | _]], state) do
+    {:noreply, state}
   end
 
   def handle_cast(
@@ -131,8 +135,16 @@ defmodule CfBfx.Server do
 
   defp cancel_all_active_offers() do
     case API.get_active_offers_v1() do
-      {:ok, offers} -> Enum.each(offers, &(API.cancel_offer_v1(&1["id"])))
-      _ -> :ok
+      {:ok, offers} ->
+        Enum.each(
+          offers,
+          fn
+            (%{"currency" => "GBP"}) -> :ok
+            (%{"id" => id}) -> API.cancel_offer_v1(id)
+          end
+        )
+      _ ->
+        :ok
     end
   end
 
