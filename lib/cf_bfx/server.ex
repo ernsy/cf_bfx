@@ -10,6 +10,9 @@ defmodule CfBfx.Server do
   @check_ws_conn_period 60000 * 5
   @reset_period 60000 * 30
   @offer_volume_threshold_percent 1 / 24 / 6
+  @thirty_day_rate 20
+  @ninety_day_rate 25
+
 
   defguardp is_fiat(currency) when currency == "USD" or currency == "GBP"
 
@@ -198,8 +201,8 @@ defmodule CfBfx.Server do
     asks = funding_book["asks"]
     {:ok, funding_offer_rate} = calc_funding_offer_rate(asks, ticker.volume, @offer_volume_threshold_percent)
     period = cond do
-      funding_offer_rate >= 20 -> 120
-      funding_offer_rate >= 15 -> 30
+      funding_offer_rate >= @ninety_day_rate -> 120
+      funding_offer_rate >= @thirty_day_rate -> 30
       true -> 2
     end
     API.create_funding_offer_v1(currency, amount, funding_offer_rate, period)
